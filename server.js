@@ -1704,7 +1704,12 @@ async function callKugouModule(routePath, params, options) {
     userid: kugouToken.userid || 0,
   });
   try {
-    const resp = await mod(query, kugouCreateRequestFn);
+    // 模块调用包一层超时（默认 15s），防止酷狗网关无响应时请求永久挂起导致前端播放卡死
+    const timeoutMs = Number(options && options.timeoutMs) || 15000;
+    const resp = await Promise.race([
+      mod(query, kugouCreateRequestFn),
+      new Promise((_resolve, reject) => setTimeout(() => reject(new Error('Kugou module request timeout (' + timeoutMs + 'ms)')), timeoutMs)),
+    ]);
     const body = resp && resp.body;
     const bodyStatus = body && typeof body === 'object' ? body.status : undefined;
     const bodyErrCode = body && typeof body === 'object' ? body.error_code : undefined;
@@ -6439,7 +6444,7 @@ const server = http.createServer(async (req, res) => {
         try { qmc = new kwQmc.QmcCipher(kwQmc.decryptEkeyB64(kwekey, (b, k) => kwDecrypt(b, k || 'ylzsxkwm'))); }
         catch (e) { console.error('[Audio] kwekey 解析失败:', e.message); }
       }
-      const up = await fetch(audioUrl, { headers: hdr });
+      const up = await fetchWithTimeout(audioUrl, { headers: hdr }, 15000);
       const out = {
         'Content-Type': qmc ? 'audio/flac' : audioContentTypeForUrl(audioUrl, up.headers.get('content-type')),
         'Access-Control-Allow-Origin': '*',

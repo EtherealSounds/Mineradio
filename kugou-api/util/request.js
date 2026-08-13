@@ -156,6 +156,7 @@ const createRequest = (options) => {
       headers: Object.assign({}, options?.headers || {}, headers),
       withCredentials: true,               // 携带 Cookie
       responseType: options.responseType,  // 响应类型（如 'arraybuffer'）
+      timeout: Number(options?.timeout) || 15000,  // 默认 15s 超时，防止酷狗网关无响应时请求永久挂起
     };
 
     // ========== 代理配置 ==========

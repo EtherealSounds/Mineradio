@@ -18663,7 +18663,7 @@ async function searchAlternatePlatformSong(song) {
   var providers = alternatePlaybackProviders(song);
   for (var p = 0; p < providers.length; p++) {
     try {
-      var data = await apiJson(providerSearchEndpoint(providers[p], query));
+      var data = await apiJson(providerSearchEndpoint(providers[p], query), { timeoutMs: 10000 });
       var list = (data && (data.songs || data.result)) || [];
       for (var i = 0; i < list.length; i++) {
         if (isSameTitleArtist(song, list[i])) return cloneSong(list[i]);
@@ -24616,6 +24616,8 @@ function completeKugouLoginVerification() {
   resetKugouVerificationState();
 }
 async function kugouApiJson(url, opts, retriedAfterKugouVerification) {
+  opts = opts || {};
+  if (!opts.timeoutMs) opts.timeoutMs = 15000;
   mlog('DEBUG', 'kugouApiJson', 'enter', { url: String(url).slice(0, 200), retried: !!retriedAfterKugouVerification });
   var data = await apiJson(url, opts);
   mlog('DEBUG', 'kugouApiJson', 'response', {
